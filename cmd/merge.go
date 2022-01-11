@@ -31,7 +31,7 @@ func init() {
 func merge(_ *cobra.Command, _ []string) {
 	inputDir, _ := filepath.Abs(input)
 	_ = os.MkdirAll(filepath.Dir(outputFile), 0700)
-	csvFiles := readCSVFile(inputDir)
+	csvFiles, csvNames := readCSVFile(inputDir)
 	_, _ = fmt.Printf("Found files: %d\n", len(csvFiles))
 
 	if len(csvFiles) <= 0 {
@@ -42,8 +42,14 @@ func merge(_ *cobra.Command, _ []string) {
 	for i, f := range csvFiles {
 		bytes, _ := ioutil.ReadFile(f)
 		ss := strings.Split(string(bytes), "\n")
-		for _, s := range map[bool][]string{true: ss, false: ss[1:]}[i == 0] {
-			ls = append(ls, strings.Split(s, ";"))
+		fileName := csvNames[i]
+		if idx := strings.LastIndexByte(fileName, '.'); idx != -1 {
+			for _, s := range map[bool][]string{true: ss, false: ss[1:]}[i == 0] {
+				sss := make([]string, 0)
+				sss = append(sss, fileName[:idx])
+				sss = append(sss, strings.Split(s, ";")...)
+				ls = append(ls, sss)
+			}
 		}
 	}
 	_ = writeXlsx(outputFile, ls)

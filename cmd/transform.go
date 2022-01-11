@@ -34,7 +34,7 @@ func transform(_ *cobra.Command, _ []string) {
 	inputDir, _ := filepath.Abs(input)
 	outputDir, _ := filepath.Abs(output)
 	_ = os.MkdirAll(outputDir, 0700)
-	csvFiles := readCSVFile(inputDir)
+	csvFiles, csvNames := readCSVFile(inputDir)
 
 	_, _ = fmt.Printf("Found files: %d\n", len(csvFiles))
 
@@ -42,14 +42,14 @@ func transform(_ *cobra.Command, _ []string) {
 		return
 	}
 
-	for _, f := range csvFiles {
+	for i, f := range csvFiles {
 		bytes, _ := ioutil.ReadFile(f)
 		ss := strings.Split(string(bytes), "\n")
 		ls := make([][]string, 0)
 		for _, s := range ss {
 			ls = append(ls, strings.Split(s, ";"))
 		}
-		fileName := strings.TrimPrefix(f, inputDir)
+		fileName := csvNames[i]
 		idx := strings.LastIndexByte(fileName, '.')
 		if idx != -1 {
 			oFile := filepath.Join(outputDir, fileName[:idx]+".xlsx")
@@ -59,17 +59,19 @@ func transform(_ *cobra.Command, _ []string) {
 	}
 }
 
-func readCSVFile(inputDir string) []string {
+func readCSVFile(inputDir string) ([]string, []string) {
 	files, _ := ioutil.ReadDir(inputDir)
 	csvFiles := make([]string, 0)
+	csvNames := make([]string, 0)
 	for _, f := range files {
 		if strings.HasSuffix(strings.ToLower(f.Name()), ".csv") {
 			fileName := filepath.Join(inputDir, f.Name())
 			csvFiles = append(csvFiles, fileName)
+			csvNames = append(csvNames, f.Name())
 			_, _ = fmt.Println(fmt.Sprintf("Found file <= %s", fileName))
 		}
 	}
-	return csvFiles
+	return csvFiles, csvNames
 }
 
 func writeXlsx(distFile string, data [][]string) error {
